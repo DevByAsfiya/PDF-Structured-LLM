@@ -1,4 +1,4 @@
-# JAL Catalogue Intelligence Pipeline
+# Catalogue Intelligence Pipeline
 
 A high-precision, deterministic extraction, enrichment, and retrieval pipeline that converts the `JAL FAUCETS 2025.pdf` catalogue (202 pages, 108 MB, A4) into a structured product database with hybrid vector search and an interactive Streamlit engineering interface.
 
