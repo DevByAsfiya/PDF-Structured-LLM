@@ -1,0 +1,16 @@
+--> To activate "0-PDF Scrape" environment
+
+cd "D:\Documents\LangChainProjects\0-PDF Scraper"
+.venv\Scripts\activate
+
+
+catalogue_spec.py has errors. Fix these before we go further:
+
+SERIES_LIST is fabricated. You did not read the PDF — you invented ZANSKAR, SHYOK, BHAVANI, BETWA, ALAKNANDA, KABINI, SUTLEJ, NARMADA, CHAMBAL, KAVERI, and the comment claiming it was verified against the INDEX page is false. Delete the hardcoded list entirely. The series list must be parsed at runtime from the INDEX page in Phase 1 and written to data/interim/sections.json. Replace the constant with SERIES_LIST_SOURCE = "parsed_from_index_page" and a comment saying it is derived, not declared.
+GOLDEN_EVAL_PAGES mixes page numbering. 33, 83, 143 are printed page numbers. The PDF page indices are 40, 90, 150, 198. Fix to (40, 90, 150, 198) and add a comment naming which numbering system is used.
+SKU_PATTERN misses alphanumeric SKUs. Real examples: 76510S01, 73390S01, 75730S103, 40120N. Widen to handle digits after a letter. Remove STRICT_SKU_PATTERN — it hardcodes 5 digits and will silently drop valid SKUs.
+MRP_PATTERN only matches grid-page captions. Parts-table prices appear as bare numbers in a table cell with no MRP prefix. Add a separate TABLE_PRICE_PATTERN.
+Page ranges are guesses. FRONT_MATTER_PAGE_RANGE, PRODUCT_GRID_PAGE_RANGE, and PARTS_TABLE_PAGE_RANGE were not derived from the document. Delete them — the Phase 1 classifier determines archetypes per page. Keep only COVER_PAGE_INDEX and INDEX_PAGE_INDEX.
+PRINTED_TO_PDF_PAGE_OFFSET = 7 stays as a default, but add a comment that Phase 1 must derive it empirically from the INDEX page and log a warning if the derived value differs.
+
+Rule going forward: never write a constant you have not read from the source document. If a value must come from the PDF, leave it to be parsed at runtime rather than guessing a plausible-looking value.

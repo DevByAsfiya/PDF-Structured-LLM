@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# Secrets and local configurations
+.env
+.env.local
+*.pem
+*.key
+
+# Data directories (preserving directory structure via .gitkeep)
+data/raw/*
+!data/raw/.gitkeep
+data/interim/*
+!data/interim/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/assets/*
+!data/assets/.gitkeep
+data/db/*
+!data/db/.gitkeep
+data/vectors/*
+!data/vectors/.gitkeep
+
+# Diskcache and local caches
+.cache/
+.diskcache/
+
+# Testing and type checking
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Distribution / packaging
+*.egg-info/
+*.egg

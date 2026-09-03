@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdfscraper"
+version = "0.1.0"
+description = "Deterministic extraction and intelligence pipeline for JAL Faucets 2025 catalogue"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Catalogue Engineering Team" }
+]
+
+[project.scripts]
+pdfscraper = "pdfscraper.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-q"
