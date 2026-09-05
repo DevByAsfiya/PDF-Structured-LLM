@@ -62,9 +62,10 @@ ALL_ARCHETYPES: Final[tuple[str, ...]] = (
 
 # Extraction Regular Expressions (Deterministic)
 # JAL SKU / Cat No: matches numeric and alphanumeric SKUs
-# Grid codes: e.g. 82456, 82470, 40120N
+# Grid codes: e.g. 82456, 82470, 40120N, 82369US25, 82550RES25, 83550NS25
 # Parts-table codes: e.g. 76510S01, 73390S01, 75730S103
-SKU_PATTERN: Final[Pattern[str]] = re.compile(r"\b([0-9]{4,6}(?:[A-Z][0-9]*)?)\b")
+# Pattern: 4-6 digits optionally followed by an alpha-numeric suffix
+SKU_PATTERN: Final[Pattern[str]] = re.compile(r"\b([0-9]{4,6}(?:[A-Z]+[A-Z0-9]*)?)(?=\s|$|[^0-9A-Za-z])")
 
 # MRP pattern for product grid captions: e.g. "MRP 1992/-", "MRP 2066/-", "M.R.P. 1,594/-"
 MRP_PATTERN: Final[Pattern[str]] = re.compile(

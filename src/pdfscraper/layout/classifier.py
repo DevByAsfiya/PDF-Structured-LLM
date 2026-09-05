@@ -33,6 +33,9 @@ def _find_series_in_spans(
     known_series: list[str],
 ) -> Optional[str]:
     """Find a series name from known series in top header text blocks."""
+    # Sort by length descending so compound names match first
+    sorted_series = sorted(known_series, key=lambda s: len(s), reverse=True)
+
     header_blocks = [b for b in text_blocks if b.bbox.y0 < 150.0]
     header_blocks.sort(key=lambda b: (b.bbox.y0, -(b.font_size or 0.0)))
 
@@ -40,7 +43,7 @@ def _find_series_in_spans(
         if not b.text:
             continue
         cleaned = re.sub(r"\s+", "", b.text.upper())
-        for series in known_series:
+        for series in sorted_series:
             series_clean = re.sub(r"\s+", "", series.upper())
             if len(series_clean) >= 3 and series_clean in cleaned:
                 return series
@@ -50,7 +53,7 @@ def _find_series_in_spans(
         if not b.text:
             continue
         cleaned = re.sub(r"\s+", "", b.text.upper())
-        for series in known_series:
+        for series in sorted_series:
             series_clean = re.sub(r"\s+", "", series.upper())
             if len(series_clean) >= 3 and series_clean in cleaned:
                 return series

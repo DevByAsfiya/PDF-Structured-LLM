@@ -12,6 +12,7 @@ from loguru import logger
 from rich.console import Console
 from rich.panel import Panel
 import typer
+import pymupdf
 
 from rich.table import Table
 
@@ -225,8 +226,144 @@ def run(
         else:
             console.print("\n[bold green][OK] Zero pages classified below 0.70 confidence! All pages satisfy threshold.[/bold green]")
 
-    if "03" in stages or "04" in stages or "05" in stages or "06" in stages:
-        logger.info("Stub action: Subsequent extraction stages (03-06) scheduled for Phase 2/3.")
+    # Stages 03-05: Product grid extraction
+    needs_extract = any(s in stages for s in ("03", "04", "05", "03-05", "02-06", "all"))
+    if needs_extract:
+        import json as _json
+        from pdfscraper.extract.grid_parser import GridParser
+        from pdfscraper.layout.blocks import extract_page_blocks as _extract_blocks
+        from pdfscraper.layout.geometry import detect_series_header
+
+        logger.info("Stages 03-05 [Extract product_grid] starting")
+
+        doc = pymupdf.open(str(target))
+        known_series: list[str] = sections_info.get("faucet_series", [])
+        sections_map: list[dict] = sections_info.get("sections", [])
+        parser = GridParser()
+
+        # Determine which pages to process
+        if pages:
+            if "-" in pages:
+                p_start, p_end = map(int, pages.split("-"))
+                page_indices = list(range(p_start, p_end + 1))
+            else:
+                page_indices = [int(pages)]
+        else:
+            page_indices = list(range(1, len(doc) + 1))
+
+        all_products: list = []
+        current_series: Optional[str] = None
+
+        for page_no in page_indices:
+            page = doc[page_no - 1]
+            blocks = _extract_blocks(page, page_no)
+
+            # Resolve section context
+            sec_name = None
+            for sec in sections_map:
+                if sec.get("pdf_page_start", 0) <= page_no <= sec.get("pdf_page_end", 0):
+                    sec_name = sec.get("name")
+                    break
+
+            # Detect series header for continuity
+            text_blocks = [b for b in blocks if b.block_type == "text"]
+            detected = detect_series_header(text_blocks, known_series)
+            if detected:
+                current_series = detected
+            effective_series = current_series or sec_name or "UNKNOWN"
+
+            # Check if this page is a product_grid (has MRP tokens)
+            import re as _re
+            from pdfscraper.catalogue_spec import MRP_PATTERN as _MRP
+            all_text = " ".join(b.text for b in text_blocks if b.text)
+            mrp_count = len(list(_MRP.finditer(all_text)))
+
+            image_blocks = [b for b in blocks if b.block_type == "image"]
+
+            if mrp_count == 0:
+                # Not a product_grid page
+                console.print(
+                    f"\n[dim]Page {page_no}: NOT product_grid "
+                    f"(0 MRPs, {len(image_blocks)} images) — skipping[/dim]"
+                )
+                continue
+
+            products = parser.parse(
+                page=page,
+                blocks=blocks,
+                page_number=page_no,
+                series_name=effective_series,
+                section_name=sec_name,
+                known_series=known_series,
+            )
+
+            all_products.extend(products)
+
+            # --- Per-page detail output ---
+            total_skus = sum(len(p.variants) for p in products)
+            console.print(
+                f"\n[bold cyan]═══ Page {page_no} "
+                f"(series={effective_series}) ═══[/bold cyan]"
+            )
+            console.print(
+                f"  Images: [green]{len(image_blocks)}[/green]  |  "
+                f"Products: [green]{len(products)}[/green]  |  "
+                f"SKUs: [green]{total_skus}[/green]"
+            )
+
+            detail_table = Table(
+                show_header=True,
+                header_style="bold white",
+                title=f"Extracted SKUs — Page {page_no}",
+                title_style="bold yellow",
+            )
+            detail_table.add_column("#", justify="right", style="dim", width=4)
+            detail_table.add_column("SKU", style="bold green", width=8)
+            detail_table.add_column("Description", style="cyan", max_width=50)
+            detail_table.add_column("MRP (₹)", justify="right", style="bold yellow", width=10)
+            detail_table.add_column("Size", style="white", width=10)
+            detail_table.add_column("Conf", justify="right", style="magenta", width=6)
+            detail_table.add_column("Primary", justify="center", style="dim", width=7)
+
+            row_num = 0
+            for prod in products:
+                for v in prod.variants:
+                    row_num += 1
+                    is_primary = "✓" if v == prod.variants[0] else "·"
+                    detail_table.add_row(
+                        str(row_num),
+                        v.sku,
+                        v.description_suffix if v.description_suffix else prod.title,
+                        f"{v.mrp:,.0f}",
+                        v.dimensions_or_size or "",
+                        f"{v.confidence:.2f}",
+                        is_primary,
+                    )
+
+            console.print(detail_table)
+
+        # Save artefact
+        settings.interim_data_dir.mkdir(parents=True, exist_ok=True)
+        artefact_path = settings.interim_data_dir / "products.jsonl"
+        with open(artefact_path, "w", encoding="utf-8") as f:
+            for prod in all_products:
+                f.write(prod.model_dump_json() + "\n")
+
+        total_variants = sum(len(p.variants) for p in all_products)
+        review_count = sum(
+            1 for p in all_products if p.confidence < settings.confidence_threshold
+        )
+
+        console.print(
+            f"\n[bold green]Stages 03-05 complete.[/bold green]\n"
+            f"  Products: {len(all_products)}\n"
+            f"  Variants (SKUs): {total_variants}\n"
+            f"  Review queue (conf < {settings.confidence_threshold}): {review_count}\n"
+            f"  Artefact: [yellow]{artefact_path}[/yellow]"
+        )
+
+    if "06" in stages:
+        logger.info("Stub action: Stage 06 scheduled for Phase 3.")
 
 
 @app.command("eval")
