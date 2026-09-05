@@ -156,6 +156,8 @@ def run(
         logger.info("Stage 02 [Segment / Classify] executing across catalogue pages")
         all_pages = classify_all_pages(target, sections_info)
 
+        save_pages_parquet(all_pages)
+
         # Parse page filter if provided (e.g. '38-45')
         if pages:
             if "-" in pages:
@@ -166,8 +168,6 @@ def run(
                 selected_pages = [p for p in all_pages if p.page_number == p_single]
         else:
             selected_pages = all_pages
-
-        save_pages_parquet(selected_pages)
 
         # Archetype Summary Table
         import pandas as pd

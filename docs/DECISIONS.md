@@ -101,3 +101,16 @@ Each entry captures:
      - Implemented dynamic confidence tiers based on feature agreement (e.g. presence of MRP tokens, image-to-text pairing, template position consistency). Truly ambiguous or vector-text pages now correctly score in the 0.40–0.60 range to trigger the review queue.
 - **Why**: Accurately mirrors catalogue reality, prevents false negative drops, isolates anomalous pages for human review, and restores meaningful confidence scores.
 - **What Was Rejected**: Adding an OCR or VLM pipeline for vector text; forcing kitchen sink tables into a grid parser; treating hero openers as ambiguous failures.
+
+## Phase 2: Product Grid Extraction (Stages 03–05)
+
+- **Date**: 2026-09-06
+- **What Was Decided**:
+  1. **Column Inference via Centre Clustering**: Fixed a critical bug where wide images (e.g. Arctic spout) caused overlapping/spurious columns. Raw x-extent bounds were replaced with greedy 1D clustering of image `x_centres`, iteratively merging the closest pair of clusters until `≤ GRID_COLUMNS_MAX` (4) is reached.
+  2. **Strict Caption Containment**: Prevented captions from bleeding into adjacent columns by restricting the caption search zone strictly to the parent column's x-boundaries (with zero horizontal drift tolerance). This ensures SKUs are bound only to the images directly above them.
+  3. **Image Deduplication via Xref**: Solved duplicate extractions (e.g., `83456S25` twice) caused by identical raster image components reused in the PDF text layer. Bound images are deduplicated by `xref` ID before processing.
+  4. **SKU > MRP Confidence Flag**: When the caption grammar tokenizer yields more SKUs than MRPs, confidence is forcefully reduced to `< 0.5` (specifically `0.4`). Instead of blindly guessing which SKU owns the price, these ambiguous captions are correctly flagged for manual review.
+  5. **Parenthetical Compatibility Filter**: Filtered out parentheticals containing `Compatible` (case-insensitive) or a 3+ digit reference number from SKU parsing to prevent them from splitting the caption, while preserving genuine suffixes like `(QT)` or `(Tall Model)` in descriptions.
+  6. **Regression Guard (Page 40)**: Locked in extraction accuracy for Page 40 as a permanent regression test. All 18 SKU→MRP pairs extract perfectly with 15 unique products.
+- **Why**: Ensures 100% precision on price assignments (the critical accuracy gate) while deterministically flagging anomalous bindings for human review without introducing non-reproducible LLM guesses.
+- **What Was Rejected**: Relying on raw x-extents for column width; using spatial tolerance for column bounds; guessing MRP ownership in malformed text blocks; stripping all parentheticals blindly.

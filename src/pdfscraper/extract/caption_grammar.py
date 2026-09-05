@@ -55,7 +55,7 @@ class CaptionParseResult:
 # Examples: "(Compatible with 52665 Concealed Body)"
 #           "(82550RES25 Also Available in Rectangular Flange)"
 # ---------------------------------------------------------------------------
-_PAREN_RE = re.compile(r"\([^)]*\)")
+_PAREN_RE = re.compile(r"\([^)]*(?:(?i:compatible)|\d{3,})[^)]*\)")
 
 
 # ---------------------------------------------------------------------------
@@ -333,9 +333,14 @@ def tokenise_caption(caption_blocks: list[RawBlock]) -> CaptionParseResult:
                 f"partial_parse: {parsed_count}/{expected_count} SKU-MRP pairs resolved"
             )
         elif num_skus > num_mrps:
-            # Some SKUs are phantoms (decoration from adjacent images)
-            # — reduce confidence slightly but parsed tokens are correct
-            result.confidence = 0.85
+            # More SKUs than MRPs found in the raw text. Instead of guessing
+            # which SKU owns the price, set confidence < 0.5 to flag for review.
+            result.confidence = 0.4
+            result.warnings.append(f"too_many_skus: {num_skus} SKUs but only {num_mrps} MRPs")
+            
+            # Reduce confidence of the individual tokens as well
+            for t in result.tokens:
+                t.confidence = min(t.confidence, 0.4)
         else:
             # All SKUs resolved with prices — high confidence
             min_token_conf = min(t.confidence for t in result.tokens)
