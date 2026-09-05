@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     assets_dir: Path = PROJECT_ROOT / "data" / "assets"
     db_dir: Path = PROJECT_ROOT / "data" / "db"
     vectors_dir: Path = PROJECT_ROOT / "data" / "vectors"
+    logs_dir: Path = PROJECT_ROOT / "logs"
 
     # Database & Storage
     sqlite_db_path: Path = PROJECT_ROOT / "data" / "db" / "catalogue.sqlite"

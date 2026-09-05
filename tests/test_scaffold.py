@@ -55,7 +55,19 @@ def test_config_paths():
     assert settings.root_dir.exists()
     assert settings.data_dir.name == "data"
     assert settings.sqlite_db_path.name == "catalogue.sqlite"
+    assert settings.logs_dir.name == "logs"
     assert settings.confidence_threshold == 0.85
+
+
+def test_logging_configuration():
+    from pdfscraper.cli import configure_logging
+    from loguru import logger
+
+    configure_logging("INFO")
+    logger.info("Verification of file sink")
+    assert settings.logs_dir.exists()
+    log_files = list(settings.logs_dir.glob("pdfscraper_*.log"))
+    assert len(log_files) > 0
 
 
 def test_schema_one_to_many_product_variant():

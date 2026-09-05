@@ -112,6 +112,7 @@ class RawBlock(BaseModel):
     bbox: BoundingBox = Field(..., description="Bounding box on the page")
     text: Optional[str] = Field(None, description="Extracted raw text content for text blocks")
     image_index: Optional[int] = Field(None, description="Index of image in page stream")
+    xref: Optional[int] = Field(None, description="PyMuPDF xref identifier for raster image")
     font_size: Optional[float] = Field(None, description="Font size in points for text spans")
     font_name: Optional[str] = Field(None, description="Font family/name for text spans")
     confidence: float = Field(
@@ -171,7 +172,12 @@ class Page(BaseModel):
         description="Classified archetype ('cover', 'index', 'lifestyle', 'product_grid', 'parts_table', 'tech_spec')",
     )
     series_header: Optional[str] = Field(None, description="Detected series name in page header")
+    section_name: Optional[str] = Field(None, description="Section or collection name resolved from INDEX")
     blocks_count: int = Field(default=0, ge=0, description="Total raw blocks extracted on page")
+    has_vector_text: bool = Field(
+        default=False,
+        description="Flag indicating page contains vector-rendered or outlined text (review queue candidate)",
+    )
     confidence: float = Field(
         ...,
         ge=0.0,

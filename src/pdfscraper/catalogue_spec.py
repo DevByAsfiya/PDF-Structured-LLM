@@ -42,6 +42,8 @@ GOLDEN_EVAL_PAGES: Final[tuple[int, ...]] = (40, 90, 150, 198)
 # Page Archetypes
 ARCHETYPE_COVER: Final[str] = "cover"
 ARCHETYPE_INDEX: Final[str] = "index"
+ARCHETYPE_HERO: Final[str] = "hero"
+ARCHETYPE_EDITORIAL: Final[str] = "editorial"
 ARCHETYPE_LIFESTYLE: Final[str] = "lifestyle"
 ARCHETYPE_PRODUCT_GRID: Final[str] = "product_grid"
 ARCHETYPE_PARTS_TABLE: Final[str] = "parts_table"
@@ -50,6 +52,8 @@ ARCHETYPE_TECH_SPEC: Final[str] = "tech_spec"
 ALL_ARCHETYPES: Final[tuple[str, ...]] = (
     ARCHETYPE_COVER,
     ARCHETYPE_INDEX,
+    ARCHETYPE_HERO,
+    ARCHETYPE_EDITORIAL,
     ARCHETYPE_LIFESTYLE,
     ARCHETYPE_PRODUCT_GRID,
     ARCHETYPE_PARTS_TABLE,

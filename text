@@ -1,16 +1,166 @@
---> To activate "0-PDF Scrape" environment
+--> To activate "0-PDF Scraper" environment
 
 cd "D:\Documents\LangChainProjects\0-PDF Scraper"
 .venv\Scripts\activate
 
 
-catalogue_spec.py has errors. Fix these before we go further:
+> Walk me through this project file by file, in plain language, as if I've never seen it. For each file: what it does, why it exists as its own file rather than being merged into another, and what
+  would break if I deleted it. Then tell me honestly which files are genuinely necessary right now versus scaffolding for later phases. Keep it conversational — no code, no bullet lists of function
+  signatures.
 
-SERIES_LIST is fabricated. You did not read the PDF — you invented ZANSKAR, SHYOK, BHAVANI, BETWA, ALAKNANDA, KABINI, SUTLEJ, NARMADA, CHAMBAL, KAVERI, and the comment claiming it was verified against the INDEX page is false. Delete the hardcoded list entirely. The series list must be parsed at runtime from the INDEX page in Phase 1 and written to data/interim/sections.json. Replace the constant with SERIES_LIST_SOURCE = "parsed_from_index_page" and a comment saying it is derived, not declared.
-GOLDEN_EVAL_PAGES mixes page numbering. 33, 83, 143 are printed page numbers. The PDF page indices are 40, 90, 150, 198. Fix to (40, 90, 150, 198) and add a comment naming which numbering system is used.
-SKU_PATTERN misses alphanumeric SKUs. Real examples: 76510S01, 73390S01, 75730S103, 40120N. Widen to handle digits after a letter. Remove STRICT_SKU_PATTERN — it hardcodes 5 digits and will silently drop valid SKUs.
-MRP_PATTERN only matches grid-page captions. Parts-table prices appear as bare numbers in a table cell with no MRP prefix. Add a separate TABLE_PRICE_PATTERN.
-Page ranges are guesses. FRONT_MATTER_PAGE_RANGE, PRODUCT_GRID_PAGE_RANGE, and PARTS_TABLE_PAGE_RANGE were not derived from the document. Delete them — the Phase 1 classifier determines archetypes per page. Keep only COVER_PAGE_INDEX and INDEX_PAGE_INDEX.
-PRINTED_TO_PDF_PAGE_OFFSET = 7 stays as a default, but add a comment that Phase 1 must derive it empirically from the INDEX page and log a warning if the derived value differs.
-
-Rule going forward: never write a constant you have not read from the source document. If a value must come from the PDF, leave it to be parsed at runtime rather than guessing a plausible-looking value.
+▾ Thought for 5s, 631 tokens
+  Understanding Project File Structure
+  
+  Initial goal is to dissect each file's purpose in simple terms, considering alternatives. Justification for separate files versus merging is key; what's the impact of removal? A pragmatic assessment
+  of current necessity versus future scaffolding is also important. This approach should help provide the user with the right breakdown.
+  At a high level, this project exists to solve a very specific headache: turning a 108 MB, 202-page plumbing catalogue (JAL FAUCETS 2025.pdf) into an interactive specification tool. When an interior
+  designer or plumbing engineer needs to quote fittings for a building, they currently flip back and forth through hundreds of catalogue pages trying to find matching series, part numbers, and       
+  prices.                                                                                                                                                                                              
+                                                                                                                                                                                                       
+  This project deterministically extracts every single faucet photo, part code (SKU), and price directly from the PDF text and geometry layers, feeds them into a database, and provides a web app     
+  where someone can filter, search, compare, and build a room-by-room quotation sheet.                                                                                                                 
+                                                                                                                                                                                                       
+  Here is what every file in the project does, why it lives in its own house, and what happens if you delete it.                                                                                       
+  ──────                                                                                                                                                                                               
+  ### Project Governance & Instructions                                                                                                                                                                
+                                                                                                                                                                                                       
+  #### AGENTS.md                                                                                                                                                                                       
+                                                                                                                                                                                                       
+  • What it does: This is the project’s constitution. It lays down non-negotiable architectural rules—most importantly, that AI models must never be used to guess SKUs or prices (extraction must be  
+  pure deterministic math), that prices must be tiered statistically rather than by asking an LLM, and that stages must be independent and resumable.                                                  
+  • Why it’s a separate file: Any AI assistant working on this repo loads this file as its system instructions. If it were merged into general documentation, an AI would treat critical financial and 
+  engineering constraints as casual background reading instead of hard boundary rules.                                                                                                                 
+  • What breaks if deleted: Future development will start drifting: an assistant might lazily try to feed PDF pages to vision models, prices will hallucinate, and the core guarantees of accuracy will
+  collapse.                                                                                                                                                                                            
+                                                                                                                                                                                                       
+  #### Catalouge_Intelligence_Architecture.md                                                                                                                                                          
+                                                                                                                                                                                                       
+  • What it does: This is the detailed master blueprint. It breaks down the 12-stage extraction pipeline, explains why the catalog’s one-to-many product-to-variant relationship matters, discusses    
+  vector search and room visualization, and maps out the milestones from scratch to a full user interface.                                                                                             
+  • Why it’s a separate file: AGENTS.md is for rules and constraints; this document is for high-level system design, pipeline topology, and rationale. Keeping them separate prevents the rulebook from
+  becoming a 400-line essay.                                                                                                                                                                           
+  • What breaks if deleted: Nothing technically crashes in Python, but you lose the entire reasoning behind why the database, search, and image extraction pipelines are structured the way they are.  
+                                                                                                                                                                                                       
+  #### BUILD_PROMPTS.md                                                                                                                                                                                
+                                                                                                                                                                                                       
+  • What it does: Contains the prompt templates and step-by-step instructions for human developers or LLMs building out each individual phase of the project sequentially.                             
+  • Why it’s a separate file: It isolates phase execution checklists from the permanent codebase and architecture documentation.                                                                       
+  • What breaks if deleted: The operational roadmap for how to tackle subsequent phases would be lost, requiring you to re-plan the next stages.                                                       
+  ──────                                                                                                                                                                                               
+  ### Package Management & Configuration                                                                                                                                                               
+                                                                                                                                                                                                       
+  #### requirements.txt                                                                                                                                                                                
+                                                                                                                                                                                                       
+  • What it does: This is the authoritative shopping list of third-party Python libraries needed to run the system: PyMuPDF for reading PDF boxes, Pillow for image conversion, Pydantic for data      
+  validation, LanceDB for vectors, Streamlit for the UI, and Pytest for testing.                                                                                                                       
+  • Why it’s a separate file: Standard Python convention. It allows anyone cloning the repo to get up and running with a single environment installation command.                                      
+  • What breaks if deleted: Anyone trying to replicate or set up your virtual environment has to guess which versions of which libraries were installed.                                               
+                                                                                                                                                                                                       
+  #### pyproject.toml                                                                                                                                                                                  
+                                                                                                                                                                                                       
+  • What it does: Makes your custom code under the source directory installable as an actual Python package. It lets any script cleanly import components without awkward folder-traversal hacks.      
+  • Why it’s a separate file: Python's modern packaging standards require this file to declare editable package metadata and command-line entry points.                                                
+  • What breaks if deleted: Running package installation fails, the command-line shortcut stops existing, and internal imports across layout, extraction, and database modules will immediately throw  
+  module-not-found errors.                                                                                                                                                                             
+                                                                                                                                                                                                       
+  #### .gitignore                                                                                                                                                                                      
+                                                                                                                                                                                                       
+  • What it does: Tells Git what never to track. Crucially, it stops your secret environment keys, temporary cache folders, compiled Python files, and the giant 108 MB PDF from ever being committed  
+  to GitHub.                                                                                                                                                                                           
+  • Why it’s a separate file: Git natively requires this at the root of a workspace.                                                                                                                   
+  • What breaks if deleted: Your next Git commit will attempt to upload a massive 108 MB PDF, your private API tokens, and thousands of virtual environment files to your Git host, likely exceeding   
+  GitHub's file size limit and leaking credentials.                                                                                                                                                    
+                                                                                                                                                                                                       
+  #### .env.example & .env                                                                                                                                                                             
+                                                                                                                                                                                                       
+  • What it does: .env.example is an empty template showing what environment variables the system looks for (confidence thresholds, model names, API keys). .env is your actual private file where real
+  keys live.                                                                                                                                                                                           
+  • Why it’s a separate file: Secret hygiene. You keep .env out of version control and commit .env.example so other collaborators know what keys are needed without exposing yours.                    
+  • What breaks if deleted: If .env.example is deleted, teammates won't know what variables to configure. If .env is deleted, the pipeline will fall back to built-in defaults or complain when        
+  reaching steps that require external API keys.                                                                                                                                                       
+                                                                                                                                                                                                       
+  #### README.md                                                                                                                                                                                       
+                                                                                                                                                                                                       
+  • What it does: The welcome mat and quickstart handbook. It explains what the project does, shows how to activate the environment on Windows, and lists the exact terminal commands to run each step.
+  • Why it’s a separate file: Universal standard for software repositories.                                                                                                                            
+  • What breaks if deleted: Anyone opening the project on GitHub or locally has no quick overview of how to install, test, or run it.                                                                  
+                                                                                                                                                                                                       
+  #### Makefile                                                                                                                                                                                        
+                                                                                                                                                                                                       
+  • What it does: A shortcut runner. Instead of typing long commands to run tests, launch the UI, or execute the pipeline on sample pages, you can type short targets like make run or make test.      
+  • Why it’s a separate file: It decouples human memory from command syntax.                                                                                                                           
+  • What breaks if deleted: Nothing in Python breaks; you just have to type the full command strings into PowerShell yourself.                                                                         
+  ──────                                                                                                                                                                                               
+  ### The Python Core (src/pdfscraper/)                                                                                                                                                                
+                                                                                                                                                                                                       
+  #### config.py                                                                                                                                                                                       
+                                                                                                                                                                                                       
+  • What it does: The central nervous system for environment settings and folder paths. It uses Python's standard path library to calculate exactly where the root folder, data folders, databases, and
+  assets live, guaranteeing they work smoothly on Windows without broken forward or backward slash errors.                                                                                             
+  • Why it’s a separate file: If paths were hardcoded across various scripts, moving a folder or running on another machine would require hunting down dozens of broken file paths. Here, every module 
+  imports from one trusted place.                                                                                                                                                                      
+  • What breaks if deleted: Every single script that needs to know where to find the raw PDF, where to save extracted images, or where to write the database will immediately crash with import errors.
+                                                                                                                                                                                                       
+  #### catalogue_spec.py                                                                                                                                                                               
+                                                                                                                                                                                                       
+  • What it does: The rulebook of document-specific facts. It contains the exact PDF filename, the page numbers for the cover and index, the regular expressions that recognize JAL part codes and MRP 
+  price strings, and the geometric alignment tolerances for linking photos to captions.                                                                                                                
+  • Why it’s a separate file: Hard boundary rule. By keeping all catalogue-specific numbers and regexes in this one file, none of our extraction algorithms have hardcoded magic numbers. If JAL       
+  releases a 2026 catalogue with slight layout tweaks, you update this single file rather than rewriting parsing logic.                                                                                
+  • What breaks if deleted: The parsers lose their regexes for spotting prices and SKU codes, and the pipeline won't know which physical file to inspect.                                              
+                                                                                                                                                                                                       
+  #### schemas.py                                                                                                                                                                                      
+                                                                                                                                                                                                       
+  • What it does: Defines the exact shape and data types of everything in the pipeline. It defines what a bounding box is, what raw text spans look like, and critically, how products and variants    
+  work: one product photo can have multiple part numbers and prices (e.g. a 15mm stop cock vs. a 20mm stop cock). It also forces every single extracted item to carry an extraction method and         
+  confidence score.                                                                                                                                                                                    
+  • Why it’s a separate file: Data contract. It ensures that the stage that extracts text from the PDF, the stage that stores it in SQLite, and the Streamlit app showing it to the user are all       
+  speaking the exact same structural language.                                                                                                                                                         
+  • What breaks if deleted: The entire application loses its type safety and validation layer; scripts won't know how to bundle or serialize extracted data.                                           
+                                                                                                                                                                                                       
+  #### cli.py                                                                                                                                                                                          
+                                                                                                                                                                                                       
+  • What it does: The steering wheel. It is the command-line program that lets you run pdfscraper ingest, execute extraction stages over specific pages, or evaluate accuracy against benchmark pages. 
+  Right now, it validates arguments and logs out the planned actions.                                                                                                                                  
+  • Why it’s a separate file: User interface separation. You never want user-facing terminal logic mixed directly into the underlying extraction mathematics.                                          
+  • What breaks if deleted: You have no command-line program to run the pipeline, forcing you to write temporary one-off runner scripts to invoke anything.                                            
+  ──────                                                                                                                                                                                               
+  ### Tests & Source Assets                                                                                                                                                                            
+                                                                                                                                                                                                       
+  #### test_scaffold.py                                                                                                                                                                                
+                                                                                                                                                                                                       
+  • What it does: An automated verification check. It tests that the catalogue constants are present, that the SKU regex catches both simple numbers and alphanumeric codes like 76510S01, that the    
+  price regex catches table prices, and that the product-to-variant schema works as expected.                                                                                                          
+  • Why it’s a separate file: Test files are strictly separated from source code so they don't get shipped with production builds or pollute the operational packages.                                 
+  • What breaks if deleted: You lose the automated safety net that proves your configuration and schemas are valid before starting phase 1.                                                            
+                                                                                                                                                                                                       
+  #### JAL FAUCETS 2025.pdf                                                                                                                                                                            
+                                                                                                                                                                                                       
+  • What it does: The raw source material. 202 pages, 108 MB of embedded text, raster product photography, and parts tables.                                                                           
+  • Why it’s where it is: Kept in an isolated raw directory that is marked read-only by convention.                                                                                                    
+  • What breaks if deleted: The pipeline has nothing to ingest or scrape.                                                                                                                              
+  ──────                                                                                                                                                                                               
+  ### The Honest Reality Check: What’s Necessary Today vs. Scaffolding                                                                                                                                 
+                                                                                                                                                                                                       
+  Right now, you are standing at the end of Phase 0. If we look at the project with complete honesty:                                                                                                  
+                                                                                                                                                                                                       
+  #### Genuinely Load-Bearing Right Now (Do Not Touch)                                                                                                                                                 
+                                                                                                                                                                                                       
+  1. The PDF itself (data/raw/JAL FAUCETS 2025.pdf): Without this, there is no project.                                                                                                                
+  2. pyproject.toml & requirements.txt: Without these, your Python environment and package imports do not exist.                                                                                       
+  3. config.py: Without this, all directory and path resolution crashes.                                                                                                                               
+  4. catalogue_spec.py: Without this, your regular expressions and document constants do not exist.                                                                                                    
+  5. schemas.py: Without this, you have no data models for pages, products, variants, or bounding boxes.                                                                                               
+  6. cli.py: Without this, you have no CLI interface to kick off stages.                                                                                                                               
+  7. .gitignore: Without this, Git will accidentally commit your 108 MB binary PDF and virtual environment.                                                                                            
+  8. tests/test_scaffold.py: Proves all of the above works and passes tests.                                                                                                                           
+                                                                                                                                                                                                       
+  #### Scaffolding Waiting for Later Phases                                                                                                                                                            
+                                                                                                                                                                                                       
+  1. All the empty subdirectories with .gitkeep files (layout/, extract/, enrich/, db/, index/, recommend/, eval/golden/, app/pages/):                                                                 
+  These are empty parking spots. They do nothing right now. They exist so that when you build Phase 1 (layout classification), Phase 2 (grid parsing), Phase 3 (image extraction), Phase 4 (database), 
+  and Phase 6 (Streamlit), every developer and agent puts their files in the exact same predetermined place rather than inventing new folder structures on the fly.                                    
+  2. Makefile: Pure convenience. You could delete it right now and lose zero functionality.                                                                                                            
+  3. README.md & BUILD_PROMPTS.md: Documentation only. Necessary for human clarity and roadmapping, but Python never executes them.                                                                    
+  4. cli.py internal commands: While the CLI skeleton is necessary, the ingest, run, and eval functions are currently placeholder stubs that describe what they will do rather than doing the actual   
+  heavy extraction. Those stubs get replaced with real parsers in Phases 1 through 5.  
