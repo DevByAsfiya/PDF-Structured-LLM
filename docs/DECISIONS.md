@@ -114,3 +114,20 @@ Each entry captures:
   6. **Regression Guard (Page 40)**: Locked in extraction accuracy for Page 40 as a permanent regression test. All 18 SKU→MRP pairs extract perfectly with 15 unique products.
 - **Why**: Ensures 100% precision on price assignments (the critical accuracy gate) while deterministically flagging anomalous bindings for human review without introducing non-reproducible LLM guesses.
 - **What Was Rejected**: Relying on raw x-extents for column width; using spatial tolerance for column bounds; guessing MRP ownership in malformed text blocks; stripping all parentheticals blindly.
+
+---
+
+## Phase 3: Parts Table Extraction, Edge Cases, and Deduplication
+
+- **Date**: 2026-09-07
+- **What Was Decided**:
+  1. **Dual-Strategy Table Parsing**: Implemented `TableParser` for `parts_table` pages using `pdfplumber`. Spares tables (Pages 197-198) extract cleanly via pdfplumber's default ruled-line strategy. Kitchen Sinks (Pages 188-192) lack internal horizontal lines, returning 0 tables by default; they are parsed via a fallback zip strategy (`vertical_strategy="text"`, `horizontal_strategy="lines"`).
+  2. **Kitchen Sinks Zip Strategy**: In the fallback path, cells return wrapped columns of text. These are split on `\n` and positionally zipped into rows. The target line count is derived from the SKU column; if fewer than half the columns match this count, the row block is abandoned to prevent misalignment.
+  3. **Null-MRP Schema Fix**: Modified `schemas.Variant.mrp` to `Optional[float]` and removed `0.0` defaults in `caption_grammar.py` to strictly enforce Rule 11. Unparseable prices are stored as `None` and their confidence is dropped to `0.4` to route them to the review queue. Fixed `cli.py` to format `mrp=None` as `-`.
+  4. **Wider Price Pattern & Header Dropping**: Widened `TABLE_PRICE_PATTERN` to accept `/-` suffixes (e.g. `9194/-`). Aggressively dropped header rows by applying `SKU_PATTERN` on the extracted SKU column; non-matching strings are discarded rather than parsed as malformed products.
+  5. **Series Carry-Forward Bug Fix**: Removed stateful cross-page carry-forward of the series name (`current_series`). When a page lacks a prominent series header, it falls back cleanly to the printed section name from `sections.json` (fixing "Tizu" bleeding across pages 168-198).
+  6. **Page-Level SKU Deduplication**: Implemented deduplication by SKU within `cli.py` per page, keeping only the highest-confidence instance of a variant. This eliminated nearly 200 duplicate product entries (e.g. page 169 had SKU 36505 six times).
+  7. **GridParser Fallback for Tables**: If a page is classified as `parts_table` but `TableParser` yields 0 products, the pipeline falls back to `GridParser`. This safely handles edge cases like Page 193 (Kitchen Accessories), which was mislabelled as a table but contains standard grid captions (yielding 6 products).
+  8. **Positional Table Inference & Page 196 Gap**: For tables lacking explicit header text in the extraction (where default pdfplumber lumps everything into a single cell), the parser attempts positional inference on the `text/lines` fallback: if the first column matches `SKU_PATTERN` and the last matches `TABLE_PRICE_PATTERN`, it treats them as SKU/MRP and caps confidence at `0.6`. Note: Page 196 (PTFE Tape) still yields 0 products due to severe pdfplumber cell merging that positional inference cannot untangle. These few products remain a known gap and must be manually entered.
+- **Why**: Handles multi-strategy tabular extraction safely, eliminates silent pipeline assumptions, strictly prevents phantom data (like `mrp=0.0`), and ensures unparseable edge cases reliably land in the review queue rather than polluting the dataset.
+- **What Was Rejected**: Hardcoding a `0.0` default for `mrp`; writing file contents via python strings in CLI commands; using hardcoded column-map overrides for single broken pages (e.g. page 196) rather than generalized inference.

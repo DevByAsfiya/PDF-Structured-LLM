@@ -75,7 +75,7 @@ MRP_PATTERN: Final[Pattern[str]] = re.compile(
 
 # Parts-table price pattern: bare numbers in table cells with no MRP prefix (e.g. "1424.00", "1,424.00")
 TABLE_PRICE_PATTERN: Final[Pattern[str]] = re.compile(
-    r"^\s*(?:Rs\.?\s*)?([0-9,]+(?:\.[0-9]{2})?)\s*$",
+    r"^\s*(?:Rs\.?\s*)?([0-9,]+(?:\.[0-9]{2})?)(?:\s*/-)?\s*$",
     re.IGNORECASE,
 )
 

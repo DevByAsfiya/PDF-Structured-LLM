@@ -32,7 +32,7 @@ class CaptionToken:
     """One parsed (sku, description, mrp) tuple from a caption block."""
     sku: str
     description: str
-    mrp: float
+    mrp: Optional[float]
     raw_text: str
     dimensions_or_size: Optional[str] = None
     is_primary: bool = True
@@ -292,7 +292,7 @@ def tokenise_caption(caption_blocks: list[RawBlock]) -> CaptionParseResult:
             result.tokens.append(CaptionToken(
                 sku=sm.group(1),
                 description=raw_text[sm.end():].strip()[:80],
-                mrp=0.0,
+                mrp=None,
                 raw_text=raw_text,
                 is_primary=(i == 0),
                 confidence=0.2,

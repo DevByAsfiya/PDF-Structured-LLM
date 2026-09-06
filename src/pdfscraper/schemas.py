@@ -56,7 +56,7 @@ class Attribute(BaseModel):
 class Variant(BaseModel):
     """A specific SKU variant of a product (e.g. 15mm vs 20mm stop cock)."""
     sku: str = Field(..., description="JAL SKU / Cat No (e.g. '82456', '82470')")
-    mrp: float = Field(..., ge=0.0, description="Maximum Retail Price in INR")
+    mrp: Optional[float] = Field(None, ge=0.0, description="Maximum Retail Price in INR")
     raw_caption_line: str = Field(..., description="Exact verbatim line from the PDF caption")
     dimensions_or_size: Optional[str] = Field(
         None,

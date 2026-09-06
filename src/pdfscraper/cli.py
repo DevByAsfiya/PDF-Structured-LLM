@@ -231,8 +231,11 @@ def run(
     if needs_extract:
         import json as _json
         from pdfscraper.extract.grid_parser import GridParser
+        from pdfscraper.extract.table_parser import TableParser
         from pdfscraper.layout.blocks import extract_page_blocks as _extract_blocks
         from pdfscraper.layout.geometry import detect_series_header
+        from pdfscraper.assets.exporter import export_assets
+        import pandas as pd
 
         logger.info("Stages 03-05 [Extract product_grid] starting")
 
@@ -252,7 +255,15 @@ def run(
             page_indices = list(range(1, len(doc) + 1))
 
         all_products: list = []
-        current_series: Optional[str] = None
+
+        pages_parquet_path = settings.interim_data_dir / "pages.parquet"
+        if not pages_parquet_path.exists():
+            console.print("[red]pages.parquet not found. Please run stage 02 first.[/red]")
+            raise typer.Exit(1)
+            
+        pages_df = pd.read_parquet(pages_parquet_path)
+        # Create a dict of page_number -> archetype for fast lookup
+        page_archetypes = pages_df.set_index("page_no")["archetype"].to_dict()
 
         for page_no in page_indices:
             page = doc[page_no - 1]
@@ -265,37 +276,65 @@ def run(
                     sec_name = sec.get("name")
                     break
 
-            # Detect series header for continuity
+            # Detect series header
             text_blocks = [b for b in blocks if b.block_type == "text"]
             detected = detect_series_header(text_blocks, known_series)
-            if detected:
-                current_series = detected
-            effective_series = current_series or sec_name or "UNKNOWN"
+            effective_series = detected or sec_name or "UNKNOWN"
 
-            # Check if this page is a product_grid (has MRP tokens)
-            import re as _re
-            from pdfscraper.catalogue_spec import MRP_PATTERN as _MRP
-            all_text = " ".join(b.text for b in text_blocks if b.text)
-            mrp_count = len(list(_MRP.finditer(all_text)))
-
+            archetype = page_archetypes.get(page_no, "unknown")
             image_blocks = [b for b in blocks if b.block_type == "image"]
 
-            if mrp_count == 0:
-                # Not a product_grid page
+            if archetype == "product_grid":
+                products = parser.parse(
+                    page=page,
+                    blocks=blocks,
+                    page_number=page_no,
+                    series_name=effective_series,
+                    section_name=sec_name,
+                    known_series=known_series,
+                )
+            elif archetype == "parts_table":
+                products = TableParser().parse(
+                    page=page,
+                    blocks=blocks,
+                    page_number=page_no,
+                    series_name=effective_series,
+                    section_name=sec_name,
+                    known_series=known_series,
+                )
+                if not products:
+                    logger.info(f"Page {page_no}: parts_table yielded 0 products. Falling back to GridParser.")
+                    console.print(f"[yellow]Page {page_no}: parts_table yielded 0 products. Falling back to GridParser.[/yellow]")
+                    products = GridParser().parse(
+                        page=page,
+                        blocks=blocks,
+                        page_number=page_no,
+                        series_name=effective_series,
+                        section_name=sec_name,
+                        known_series=known_series,
+                    )
+            else:
                 console.print(
-                    f"\n[dim]Page {page_no}: NOT product_grid "
-                    f"(0 MRPs, {len(image_blocks)} images) — skipping[/dim]"
+                    f"\n[dim]Page {page_no}: Archetype '{archetype}' — skipping[/dim]"
                 )
                 continue
 
-            products = parser.parse(
-                page=page,
-                blocks=blocks,
-                page_number=page_no,
-                series_name=effective_series,
-                section_name=sec_name,
-                known_series=known_series,
-            )
+            # --- Deduplicate SKUs within the page ---
+            best_variants = {}
+            for prod in products:
+                for v in prod.variants:
+                    if v.sku not in best_variants or v.confidence > best_variants[v.sku][0].confidence:
+                        best_variants[v.sku] = (v, prod)
+
+            deduped_products_map = {}
+            for v, original_prod in best_variants.values():
+                if original_prod.product_id not in deduped_products_map:
+                    new_prod = original_prod.model_copy()
+                    new_prod.variants = []
+                    deduped_products_map[original_prod.product_id] = new_prod
+                deduped_products_map[original_prod.product_id].variants.append(v)
+            
+            products = list(deduped_products_map.values())
 
             all_products.extend(products)
 
@@ -334,7 +373,7 @@ def run(
                         str(row_num),
                         v.sku,
                         v.description_suffix if v.description_suffix else prod.title,
-                        f"{v.mrp:,.0f}",
+                        f"{v.mrp:,.0f}" if v.mrp is not None else "-",
                         v.dimensions_or_size or "",
                         f"{v.confidence:.2f}",
                         is_primary,
@@ -342,24 +381,52 @@ def run(
 
             console.print(detail_table)
 
-        # Save artefact
+        # Export assets
+        console.print("[cyan]Exporting and deduplicating image assets...[/cyan]")
+        output_assets_dir = settings.data_dir / "assets"
+        all_products = export_assets(doc, all_products, output_assets_dir)
+
+        # Save interim jsonl
         settings.interim_data_dir.mkdir(parents=True, exist_ok=True)
         artefact_path = settings.interim_data_dir / "products.jsonl"
         with open(artefact_path, "w", encoding="utf-8") as f:
             for prod in all_products:
                 f.write(prod.model_dump_json() + "\n")
 
+        # Write processed Parquet
+        processed_dir = settings.data_dir / "processed"
+        processed_dir.mkdir(parents=True, exist_ok=True)
+        parquet_path = processed_dir / "products.parquet"
+        
+        df_records = []
+        for p in all_products:
+            d = p.model_dump()
+            d["variants"] = _json.dumps([v for v in d["variants"]]) if d.get("variants") else "[]"
+            d["asset"] = _json.dumps(d["asset"]) if d.get("asset") else None
+            d["bbox"] = _json.dumps(d["bbox"]) if d.get("bbox") else None
+            df_records.append(d)
+            
+        if df_records:
+            df = pd.DataFrame(df_records)
+            df.to_parquet(parquet_path, engine="pyarrow")
+        
         total_variants = sum(len(p.variants) for p in all_products)
+        unique_images = len(set(p.image_asset_id for p in all_products if p.image_asset_id))
         review_count = sum(
             1 for p in all_products if p.confidence < settings.confidence_threshold
         )
+        
+        product_archetypes = [page_archetypes.get(p.page_number, "unknown") for p in all_products]
+        arch_counts = pd.Series(product_archetypes).value_counts().to_dict()
 
         console.print(
             f"\n[bold green]Stages 03-05 complete.[/bold green]\n"
             f"  Products: {len(all_products)}\n"
             f"  Variants (SKUs): {total_variants}\n"
+            f"  Unique Images: {unique_images}\n"
             f"  Review queue (conf < {settings.confidence_threshold}): {review_count}\n"
-            f"  Artefact: [yellow]{artefact_path}[/yellow]"
+            f"  Per-archetype product counts: {arch_counts}\n"
+            f"  Artefact: [yellow]{parquet_path}[/yellow]"
         )
 
     if "06" in stages:
