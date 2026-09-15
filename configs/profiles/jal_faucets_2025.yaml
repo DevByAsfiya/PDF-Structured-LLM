@@ -1,0 +1,49 @@
+manufacturer: "JAL"
+pdf_filename: "JAL FAUCETS 2025.pdf"
+total_pages: 202
+page_width_pt: 595.276
+page_height_pt: 841.89
+pdf_producer: "PDFium"
+pdf_version: "1.7"
+price_effective_date: "23.11.2024"
+currency: "INR"
+
+printed_to_pdf_page_offset: 7
+cover_page_index: 1
+index_page_index: 6
+fast_dev_loop_page_range: [38, 45]
+golden_eval_pages: [40, 90, 150, 198]
+
+archetypes:
+  cover: "cover"
+  index: "index"
+  hero: "hero"
+  editorial: "editorial"
+  lifestyle: "lifestyle"
+  product_grid: "product_grid"
+  parts_table: "parts_table"
+  tech_spec: "tech_spec"
+
+regex_patterns:
+  sku: "\\b([0-9]{4,6}(?:[A-Z]+[A-Z0-9]*)?)(?=\\s|$|[^0-9A-Za-z])"
+  mrp: "(?:M\\.?R\\.?P\\.?|MRP)\\s*(?:\\(Rs\\.?\\s*Each\\))?\\s*:?\\s*([0-9,]+(?:\\.[0-9]{2})?)\\s*(?:/\\-|/-)?"
+  table_price: "^\\s*(?:Rs\\.?\\s*)?([0-9,]+(?:\\.[0-9]{2})?)(?:\\s*/-)?\\s*$"
+  price_effective_date: "M\\.?R\\.?P\\.?\\s*w\\.?e\\.?f\\.?\\s*([0-9]{1,2}[\\.\\-\\/][0-9]{1,2}[\\.\\-\\/][0-9]{4})"
+  size: "\\b([0-9]+(?:\\.[0-9]+)?\\s*(?:mm|inch|cm|g|kg|l|ltr|mtr|m))\\b"
+
+grid_geometry:
+  grid_columns_min: 3
+  grid_columns_max: 4
+  column_x_tolerance_pt: 12.0
+  image_caption_max_vertical_gap_pt: 25.0
+  max_caption_offset_pt: 90.0
+  max_horizontal_drift_pt: 15.0
+  section_header_min_font_size_pt: 20.0
+  min_interior_bounding_box_intersection_ratio: 0.50
+
+image_extraction:
+  source_image_colorspace: "CMYK"
+  target_image_colorspace: "sRGB"
+  source_image_dpi: 300
+  min_image_area_px: 5000
+  max_image_area_ratio: 0.85

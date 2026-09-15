@@ -4,7 +4,7 @@ import json
 import pymupdf
 import pytest
 
-from pdfscraper.catalogue_spec import PDF_FILENAME
+from pdfscraper.active_profile import PDF_FILENAME
 from pdfscraper.config import settings
 from pdfscraper.layout.blocks import extract_page_blocks
 from pdfscraper.extract.grid_parser import GridParser

@@ -7,7 +7,7 @@ from typing import Optional
 from loguru import logger
 import pymupdf
 
-from pdfscraper.catalogue_spec import (
+from pdfscraper.active_profile import (
     CURRENCY,
     MANUFACTURER,
     PDF_FILENAME,

@@ -14,7 +14,7 @@ from typing import Optional
 
 from loguru import logger
 
-from pdfscraper.catalogue_spec import (
+from pdfscraper.active_profile import (
     COLUMN_X_TOLERANCE_PT,
     GRID_COLUMNS_MAX,
     GRID_COLUMNS_MIN,

@@ -8,7 +8,7 @@ from typing import Any, Optional
 from loguru import logger
 import pymupdf
 
-from pdfscraper.catalogue_spec import (
+from pdfscraper.active_profile import (
     INDEX_PAGE_INDEX,
     PDF_FILENAME,
     PRINTED_TO_PDF_PAGE_OFFSET,

@@ -2,7 +2,7 @@
 
 import pytest
 import pymupdf
-from pdfscraper.catalogue_spec import PDF_FILENAME
+from pdfscraper.active_profile import PDF_FILENAME
 from pdfscraper.config import settings
 from pdfscraper.extract.table_parser import TableParser
 from pdfscraper.layout.blocks import extract_page_blocks

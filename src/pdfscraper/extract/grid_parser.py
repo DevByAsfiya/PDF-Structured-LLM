@@ -17,7 +17,7 @@ from typing import Optional
 import pymupdf
 from loguru import logger
 
-from pdfscraper.catalogue_spec import (
+from pdfscraper.active_profile import (
     ARCHETYPE_PRODUCT_GRID,
     PRINTED_TO_PDF_PAGE_OFFSET,
 )

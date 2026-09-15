@@ -8,7 +8,7 @@ import pdfplumber
 import pymupdf
 from loguru import logger
 
-from pdfscraper.catalogue_spec import PRINTED_TO_PDF_PAGE_OFFSET, TABLE_PRICE_PATTERN, SKU_PATTERN
+from pdfscraper.active_profile import PRINTED_TO_PDF_PAGE_OFFSET, TABLE_PRICE_PATTERN, SKU_PATTERN
 from pdfscraper.extract.base import PageParser
 from pdfscraper.schemas import Attribute, BoundingBox, Product, RawBlock, Variant
 

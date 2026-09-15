@@ -8,7 +8,7 @@ from loguru import logger
 from PIL import Image
 
 from pdfscraper.assets.dedupe import compute_phash
-from pdfscraper.catalogue_spec import MIN_IMAGE_AREA_PX
+from pdfscraper.active_profile import MIN_IMAGE_AREA_PX
 from pdfscraper.schemas import Asset, Product
 
 

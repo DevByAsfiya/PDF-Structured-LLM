@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     vectors_dir: Path = PROJECT_ROOT / "data" / "vectors"
     logs_dir: Path = PROJECT_ROOT / "logs"
 
+    # Profile Configuration
+    profile_path: Path = PROJECT_ROOT / "configs" / "profiles" / "jal_faucets_2025.yaml"
+
     # Database & Storage
     sqlite_db_path: Path = PROJECT_ROOT / "data" / "db" / "catalogue.sqlite"
     lancedb_dir: Path = PROJECT_ROOT / "data" / "vectors" / "lancedb"

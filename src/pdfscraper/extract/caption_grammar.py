@@ -19,7 +19,7 @@ from typing import Optional
 
 from loguru import logger
 
-from pdfscraper.catalogue_spec import MRP_PATTERN, SKU_PATTERN, SIZE_PATTERN
+from pdfscraper.active_profile import MRP_PATTERN, SKU_PATTERN, SIZE_PATTERN
 from pdfscraper.schemas import RawBlock
 
 

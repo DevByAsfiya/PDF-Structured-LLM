@@ -6,7 +6,7 @@ import pandas as pd
 import pymupdf
 import pytest
 
-from pdfscraper.catalogue_spec import PDF_FILENAME, PRINTED_TO_PDF_PAGE_OFFSET, TOTAL_PAGES
+from pdfscraper.active_profile import PDF_FILENAME, PRINTED_TO_PDF_PAGE_OFFSET, TOTAL_PAGES
 from pdfscraper.config import settings
 from pdfscraper.ingest import ingest_catalogue, parse_index_and_sections
 from pdfscraper.layout.blocks import extract_page_blocks

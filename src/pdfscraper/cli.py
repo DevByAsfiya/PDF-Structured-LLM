@@ -16,7 +16,7 @@ import pymupdf
 
 from rich.table import Table
 
-from pdfscraper.catalogue_spec import (
+from pdfscraper.active_profile import (
     FAST_DEV_LOOP_PAGE_RANGE,
     GOLDEN_EVAL_PAGES,
     PDF_FILENAME,

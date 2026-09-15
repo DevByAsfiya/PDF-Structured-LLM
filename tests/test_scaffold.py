@@ -1,6 +1,6 @@
 """test_scaffold.py - Basic verification of scaffolded schemas, config, and spec."""
 
-from pdfscraper.catalogue_spec import (
+from pdfscraper.active_profile import (
     ARCHETYPE_PRODUCT_GRID,
     COVER_PAGE_INDEX,
     CURRENCY,

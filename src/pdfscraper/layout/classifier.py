@@ -7,7 +7,7 @@ from loguru import logger
 import pandas as pd
 import pymupdf
 
-from pdfscraper.catalogue_spec import (
+from pdfscraper.active_profile import (
     ALL_ARCHETYPES,
     ARCHETYPE_COVER,
     ARCHETYPE_EDITORIAL,
