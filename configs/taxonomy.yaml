@@ -1,0 +1,196 @@
+version: '1.0'
+status: approved
+total_descriptions_in_db: 595
+sampled_descriptions: 250
+categories:
+- category: Basin Mixers
+  subcategories:
+  - Single Lever Tall Model
+  - Single Lever Swivel
+  - Single Lever Exposed
+  - Single Lever Concealed
+  - Single Lever Surgical
+  description: Mixers designed for bathroom basins, including single-lever and swivel types, both exposed and concealed installations.
+  example_products:
+  - Single Lever Basin Mixer (Tall Model)
+  - Single Lever Basin Mixer Tall Model 12" Long (Extended Body)
+- category: Wall Mixers
+  subcategories:
+  - Concealed
+  - Exposed
+  - Bath Wall Mixer
+  - Shower Wall Mixer
+  - 3-in-1 with Overhead Provision
+  description: Mixers mounted on walls for basins, baths or showers, covering concealed and exposed designs and multi-function
+    units.
+  example_products:
+  - Single Lever Wall Mixer (exposed) with divertor
+  - Wall Mixer 3-in-1 with provision for hand shower & overhead shower with S.S. bend
+- category: Bib Taps
+  subcategories:
+  - Long Body
+  - Swivel
+  - Two Way
+  - With Foam Flow
+  - Without Flange
+  - Elbow Action
+  description: Taps for bathroom or kitchen sinks, including long-body, swivel, two-way and foam-flow variants, with or without
+    flanges.
+  example_products:
+  - Bib Tap 'Long Body' with foam flow & flange
+  - Bib Tap ‘Swivel’ C Spout with flange
+- category: Pillar Taps
+  subcategories:
+  - Swivel
+  - Long Spout
+  - Foam Flow
+  - Elbow Action
+  - Tall Model
+  - With Flange
+  description: Free-standing taps for washbasins, featuring swivel heads, foam flow, elbow action and tall models.
+  example_products:
+  - Pillar Tap ‘Swivel’ with Foam Flow
+  - Auto Shut Pillar Tap Long Spout with Flange & Magnetic Cartridge
+- category: Shower Arms & Accessories
+  subcategories:
+  - With Flange
+  - Without Flange
+  - Round
+  - Goose Neck
+  - Pipe Length Variants
+  description: Components that connect showers to water supply, including arms with various shapes, lengths and flange options.
+  example_products:
+  - Shower Arm with flange 8"
+  - Shower Arm round with Goose Neck & Flange
+- category: Showers
+  subcategories:
+  - Hand Shower
+  - Overhead Rain
+  - Slim Line
+  - Skein Round
+  - Hydro Massage
+  description: Complete shower heads and systems, ranging from hand-held units to overhead rain and specialized massage models.
+  example_products:
+  - Hand Shower '3-Flow'
+  - Overhead Rain Shower (8" Round) ABS (S.Steel)
+- category: Stop Cocks & Angle Stops
+  subcategories:
+  - Angle Stop Cock
+  - Concealed Stop Cock
+  - CPVC Stop Cock
+  - J Angle Stop Cock
+  - Auto Shut Urinal Stop Cock
+  description: Valves used to control water flow to fixtures, including angle stops, concealed stops and specialty models.
+  example_products:
+  - Angle Stop Cock ‘Two Way’ with flange
+  - Concealed Stop Cock with flange 20 mm
+- category: Divertors
+  subcategories:
+  - Single Lever Concealed Divertor
+  - Thermostatic Multi-Flow
+  - High Flow Multi-Flow
+  - Master Control Stop Cock
+  description: Devices that divert water between multiple outlets, often integrated with mixers for showers or baths.
+  example_products:
+  - Exposed part of Single Lever Concealed Divertor Mixer Push Type
+  - Body of High Flow Multi Flow Divertor (45 mm Cartridge) for 4 Outlets
+- category: Traps, Waste & Gratings
+  subcategories:
+  - Bottle Trap
+  - Waste Coupling
+  - Grating Round
+  - Grating Square
+  - Cockroach Trap
+  description: Plumbing components for drainage and floor protection, including bottle traps, various waste couplings and
+    floor gratings.
+  example_products:
+  - Bottle Trap ‘Elegant’ 32 mm
+  - Grating Square 6" * 6" Matt Finish (S.S.)
+- category: Bath & Tub Fixtures
+  subcategories:
+  - Tub Filler
+  - Bath Rail
+  - Bath Shelf
+  - Shower Rail
+  - Bath Accessories Set
+  description: Fixtures specifically for bathtubs, such as filler valves, rails, shelves and accessory kits.
+  example_products:
+  - Tub Filler with diverter & flange
+  - Bath Accessories Set of five pcs. (Towel Ring, Tumbler Holder, Towel Rail, Soap Tray & Robe Hook)
+- category: Sensors & Auto Shut
+  subcategories:
+  - Sensor Bib Tap
+  - Sensor Tap Deck Mounted
+  - Auto Shut Pillar Tap
+  - Sensor Urinal
+  description: Touch-less or automatic shut-off fixtures for hygiene and water saving, covering bib taps, pillar taps and
+    urinals.
+  example_products:
+  - Sensor Bib Tap Swivel ‘Ken’
+  - Auto Shut Pillar Tap Long Spout with Flange & Magnetic Cartridge
+- category: Cartridges, Spindles & Spare Parts
+  subcategories:
+  - Ceramic Cartridge
+  - Spindle Assembly
+  - Complete Spindle Assembly
+  - Change Over Divertor
+  description: Replaceable internal components and generic spare parts used across various fixtures.
+  example_products:
+  - Ceramic Cartridge for Bib Tap Two Way (25mm Centre Close)
+  - Spindle Assembly (24x1.5)
+- category: Health Faucets
+  subcategories:
+  - Standard Set
+  - Butterfly Jet
+  - Legend Series
+  - PVC/ABS Hook Sets
+  description: Specialized faucet systems for hospitals and care facilities, often with anti-bacterial features and flexible
+    hoses.
+  example_products:
+  - Health Faucet Set with PVC 1 mtr & ABS Hook 15mm
+  - Health faucet set 'BUTTERFLY JET STD' 24" PVC pipe
+- category: Mirrors & Glass
+  subcategories:
+  - Bevelled Mirror
+  - Standard Mirror
+  description: Wall-mounted mirrors with various sizes and thicknesses for bathroom décor.
+  example_products:
+  - Bevelled Mirror 18" round with 5mm Thickness
+  - Mirror 18"x24" with 4mm Thickness
+- category: Hardware & Accessories
+  subcategories:
+  - Robe Hook
+  - Towel Rail
+  - Soap Dish
+  - Grab Bar
+  - Shelf
+  - Paper Holder
+  description: Auxiliary bathroom hardware such as hooks, rails, trays, bars and shelves.
+  example_products:
+  - Robe Hook Twin
+  - Towel Rail 'Twin Rod' 600mm
+- category: Kitchen Sinks
+  subcategories:
+  - Single Bowl
+  - Double Bowl
+  - Side Drain
+  - Hand Made
+  description: Stainless steel and hand made sinks for kitchens in various configurations.
+  example_products:
+  - Single Bowl Sinks - 24x18 (Glossy, 304 Grade)
+- category: Flanges
+  subcategories:
+  - Standard Flange
+  - Indus Flange
+  - Special Flange
+  description: Wall and ceiling flanges for covering pipe holes.
+  example_products:
+  - Standard Flange
+  - Indus Flange
+- category: Foot Operated Valves
+  subcategories:
+  - Wall Mounted
+  - Floor Mounted
+  description: Valves operated by foot pedal for hands-free operation.
+  example_products:
+  - Foot Operated Valve

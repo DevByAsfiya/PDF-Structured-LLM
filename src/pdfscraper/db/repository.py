@@ -43,6 +43,48 @@ class CatalogueRepository:
 
     # ── Load from parquet ─────────────────────────────────────────────
 
+    def load_taxonomy(self, taxonomy_path: Path) -> int:
+        """Load category taxonomy from YAML into database."""
+        import yaml
+        
+        if not taxonomy_path.exists():
+            raise FileNotFoundError(f"Taxonomy file not found: {taxonomy_path}")
+            
+        with open(taxonomy_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+            
+        if data.get("status") != "approved":
+            raise ValueError(f"Taxonomy at {taxonomy_path} is not approved. Please review and update status to 'approved'.")
+            
+        with self.session() as session:
+            # Delete existing taxonomy to replace
+            session.query(TaxonomyNodeRow).delete(synchronize_session="fetch")
+            
+            node_count = 0
+            for cat in data.get("categories", []):
+                cat_name = cat["category"]
+                cat_node = TaxonomyNodeRow(
+                    name=cat_name,
+                    level=1,
+                    description=cat.get("description", "")
+                )
+                session.add(cat_node)
+                session.flush()
+                node_count += 1
+                
+                for sub in cat.get("subcategories", []):
+                    # Subcategory names must be unique across taxonomy
+                    sub_node = TaxonomyNodeRow(
+                        name=f"{cat_name} > {sub}",
+                        parent_id=cat_node.id,
+                        level=2
+                    )
+                    session.add(sub_node)
+                    node_count += 1
+            
+            session.commit()        
+        return node_count
+
     def load_products_from_parquet(
         self,
         parquet_path: Optional[Path] = None,

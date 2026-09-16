@@ -156,12 +156,24 @@ class TableParser(PageParser):
                     extraction_method="pdfplumber_table",
                 )
 
+                if not desc_val:
+                    # Synthesize description from size, grade, finish, etc. (mostly for Kitchen Sinks)
+                    parts = []
+                    if effective_series:
+                        parts.append(effective_series)
+                    if size_val:
+                        parts.append(size_val)
+                    attr_vals = [a.value for a in attributes if a.name != "used_in"]
+                    if attr_vals:
+                        parts.append("(" + ", ".join(attr_vals) + ")")
+                    desc_val = " ".join(parts) if parts else f"Part {cat_no_val}"
+
                 product_id = f"PROD_P{page_number:03d}_{product_counter:02d}"
 
                 product = Product(
                     product_id=product_id,
                     series_name=effective_series,
-                    title=desc_val or f"Part {cat_no_val}",
+                    title=desc_val,
                     page_number=page_number,
                     printed_page_number=printed_page,
                     bbox=BoundingBox(x0=0.0, y0=0.0, x1=0.0, y1=0.0),
@@ -320,11 +332,22 @@ class TableParser(PageParser):
                         extraction_method="pdfplumber_text_lines_zip",
                     )
 
+                    if not desc_val:
+                        parts = []
+                        if effective_series:
+                            parts.append(effective_series)
+                        if size_val:
+                            parts.append(size_val)
+                        attr_vals = [str(a.value) for a in attributes if a.name != "used_in"]
+                        if attr_vals:
+                            parts.append("(" + ", ".join(attr_vals) + ")")
+                        desc_val = " ".join(parts) if parts else f"Part {cat_no_val}"
+
                     product_id = f"PROD_P{page_number:03d}_{product_counter:02d}"
                     product = Product(
                         product_id=product_id,
                         series_name=effective_series,
-                        title=desc_val or f"Part {cat_no_val}",
+                        title=desc_val,
                         page_number=page_number,
                         printed_page_number=printed_page,
                         bbox=BoundingBox(x0=0.0, y0=0.0, x1=0.0, y1=0.0),

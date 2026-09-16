@@ -27,7 +27,7 @@ from openai import OpenAI
 from pydantic import BaseModel
 from tenacity import (
     retry,
-    retry_if_exception_type,
+    retry_if_exception,
     stop_after_attempt,
     wait_exponential,
 )
@@ -82,15 +82,22 @@ def _cache_key(model: str, prompt: str) -> str:
     return f"{model}:{prompt_hash}"
 
 
+from openai import APIStatusError, APIConnectionError, APITimeoutError
+
+def _is_retryable_error(e: Exception) -> bool:
+    if isinstance(e, APIStatusError):
+        # Retry on 429 (Too Many Requests) or 5xx (Server Errors)
+        return e.status_code == 429 or e.status_code >= 500
+    if isinstance(e, (APIConnectionError, APITimeoutError)):
+        return True
+    return False
+
+
 @retry(
-    retry=retry_if_exception_type((Exception,)),
     stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=2, max=30),
-    before_sleep=lambda retry_state: logger.warning(
-        "LLM call attempt {} failed, retrying in {}s...",
-        retry_state.attempt_number,
-        retry_state.next_action.sleep,
-    ),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    retry=retry_if_exception(_is_retryable_error),
+    reraise=True,
 )
 def _call_llm(
     client: OpenAI,
@@ -98,19 +105,24 @@ def _call_llm(
     prompt: str,
     system_prompt: Optional[str] = None,
     temperature: float = 0.0,
-) -> dict:
-    """Make a raw LLM call with retry. Returns the parsed JSON response."""
+    max_tokens: Optional[int] = None,
+) -> dict[str, Any]:
+    """Execute the OpenAI chat completion call."""
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": prompt})
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        response_format={"type": "json_object"},
-    )
+    kwargs = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "response_format": {"type": "json_object"},
+    }
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+
+    response = client.chat.completions.create(**kwargs)
 
     choice = response.choices[0]
     content = choice.message.content
@@ -134,13 +146,13 @@ def _call_llm(
 
 def call_llm_structured(
     prompt: str,
-    response_model: Type[T],
-    *,
+    response_model: Type[BaseModel],
     model: Optional[str] = None,
     system_prompt: Optional[str] = None,
     temperature: float = 0.0,
     use_cache: bool = True,
-) -> T:
+    max_tokens: Optional[int] = None,
+) -> BaseModel:
     """Call the LLM and validate the response against a pydantic model.
 
     Args:
@@ -150,6 +162,7 @@ def call_llm_structured(
         system_prompt: Optional system prompt.
         temperature: Sampling temperature.
         use_cache: Whether to use disk cache.
+        max_tokens: Maximum tokens to generate.
 
     Returns:
         Validated pydantic model instance.
@@ -182,6 +195,7 @@ def call_llm_structured(
         prompt=prompt,
         system_prompt=system_prompt,
         temperature=temperature,
+        max_tokens=max_tokens,
     )
 
     # Validate against pydantic model

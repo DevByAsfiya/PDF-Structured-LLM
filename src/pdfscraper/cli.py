@@ -534,7 +534,12 @@ def enrich(
     step: str = typer.Option(
         "taxonomy",
         "--step",
-        help="Enrichment step to run: 'taxonomy' (propose taxonomy for review).",
+        help="Enrichment step to run: 'taxonomy' (propose taxonomy for review) or 'assign' (assign categories).",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Force overwrite of approved taxonomy.",
     ),
 ) -> None:
     """Run enrichment steps. Start with 'taxonomy' to propose categories for review."""
@@ -551,12 +556,26 @@ def enrich(
             )
         )
 
-        output_path = propose_taxonomy()
+        output_path = propose_taxonomy(force=force)
 
         console.print(
             f"\n[bold green]Taxonomy proposal written to:[/bold green] [yellow]{output_path}[/yellow]\n"
             f"[bold]Review the file and approve before running the assignment step.[/bold]"
         )
+    elif step == "assign":
+        from pdfscraper.enrich.categorizer import assign_categories
+
+        console.print(
+            Panel.fit(
+                "[bold magenta]Step 2: Category Assignment[/bold magenta]\n"
+                "Assigning categories to products in the database.\n"
+                "[yellow]This calls the LLM (Groq) in batches.[/yellow]"
+            )
+        )
+
+        assign_categories()
+
+        console.print("\n[bold green]Categorization complete.[/bold green]")
     else:
         console.print(f"[red]Unknown enrichment step: {step}[/red]")
         raise typer.Exit(1)

@@ -1,0 +1,31 @@
+You are a plumbing product taxonomy expert. Your task is to categorize a batch of products into an existing taxonomy.
+
+Here is the allowed taxonomy:
+{% for cat in categories %}
+{{ loop.index }}. {{ cat.category }} ({{ cat.description }})
+{% for sub in cat.subcategories %}
+   - {{ loop.index }}. {{ sub }}
+{% endfor %}
+{% endfor %}
+
+Here are the products to categorize:
+{% for p in products %}
+- Product ID: {{ p.product_id }}
+  Description: {{ p.title }}
+{% endfor %}
+
+Rules:
+1. Every product MUST be assigned to exactly one Category from the list above.
+2. Every product MUST be assigned to exactly one Subcategory from that Category's list. If none fit perfectly, pick the closest one.
+3. Output a JSON object with a single key "assignments" containing a list of objects. Each object must have "product_id", "c" (the category integer ID), and "s" (the subcategory integer ID).
+
+JSON format:
+{
+  "assignments": [
+    {
+      "product_id": "...",
+      "c": 3,
+      "s": 1
+    }
+  ]
+}

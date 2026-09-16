@@ -144,3 +144,16 @@ Each entry captures:
   4. **Known Constraint — One Catalogue Per Process**: The global-state architecture means a single Python process can only hold one catalogue's configuration. If the pipeline ever evolves from a CLI tool into a long-running service, API, or concurrent batch processor, the profile must be refactored to be passed explicitly through the call chain as a parameter (the way parsers already take `known_series`). This was evaluated and deliberately deferred: the CLI assumes one catalogue per invocation, and touching every parser signature introduces refactor risk with no immediate benefit.
 - **Why**: Decouples catalogue-specific values from Python code so adding a new catalogue is a YAML file, not a code change. The global shim preserves all existing signatures and keeps the refactor risk minimal — all 12 tests pass, full pipeline yields identical 1,065 products.
 - **What Was Rejected**: Passing the `CatalogueProfile` explicitly as a parameter through the entire call chain (CLI → classifier → geometry → parsers). Evaluated for testability and multi-tenancy benefits, deferred because the added signature churn introduces silent breakage risk with no current use case.
+    
+---
+
+## Phase 4: Database Enrichment and LLM Categorization
+
+- **Date**: 2026-09-16
+- **What Was Decided**:
+  1. **SQLite Database Layer**: Designed SQLAlchemy models (`db/models.py`) mapping the hierarchy: Catalogue -> Page -> Product -> Variant. Attributes and images are attached to Products and Variants. Built an idempotent `load` command pushing Parquet products into SQLite using cascaded deletes to avoid duplication.
+  2. **LLM Categorization Assignment**: Introduced a Groq-powered enrichment step querying the `ProductRow.title` to assign a category and subcategory from an approved `configs/taxonomy.yaml` list.
+  3. **Multi-Model Token Limit Workaround**: Groq enforces strict "Tokens Per Day" (TPD) limits on free tier accounts per-model (e.g., 200,000 for `openai/gpt-oss-120b`). The categorization run of 1,065 products was split across two different models (`openai/gpt-oss-120b` for the first ~400, and `qwen/qwen3.8-27b` for the remainder) because the daily cap was exhausted mid-run.
+  4. **Categorization Optimization**: We dramatically cut output token consumption by sending indices (`c: 1`, `s: 2`) instead of string repetitions. We batched 20 products per prompt and passed `max_tokens=8192` explicitly to avoid silent truncation by the LLM client. We also made the assignment query purely `WHERE category IS NULL` to allow resumable multi-model runs.
+- **Why**: TPD limits forced a multi-model workaround. A single-model run (on a paid tier or large daily limit) would yield more consistent reasoning results across the dataset. We rely heavily on index mapping and batching to minimize token bloat per product.
+- **What Was Rejected**: Shrinking the batch size without compressing output tokens (which doesn't solve truncation over long schemas); abandoning SQLite FK constraints without explicit database loading order (taxonomy first, then products).
