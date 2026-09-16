@@ -131,3 +131,16 @@ Each entry captures:
   8. **Positional Table Inference & Page 196 Gap**: For tables lacking explicit header text in the extraction (where default pdfplumber lumps everything into a single cell), the parser attempts positional inference on the `text/lines` fallback: if the first column matches `SKU_PATTERN` and the last matches `TABLE_PRICE_PATTERN`, it treats them as SKU/MRP and caps confidence at `0.6`. Note: Page 196 (PTFE Tape) still yields 0 products due to severe pdfplumber cell merging that positional inference cannot untangle. These few products remain a known gap and must be manually entered.
 - **Why**: Handles multi-strategy tabular extraction safely, eliminates silent pipeline assumptions, strictly prevents phantom data (like `mrp=0.0`), and ensures unparseable edge cases reliably land in the review queue rather than polluting the dataset.
 - **What Was Rejected**: Hardcoding a `0.0` default for `mrp`; writing file contents via python strings in CLI commands; using hardcoded column-map overrides for single broken pages (e.g. page 196) rather than generalized inference.
+
+---
+
+## Profile Configuration Refactor (Post-Phase 3)
+
+- **Date**: 2026-09-16
+- **What Was Decided**:
+  1. **YAML Catalogue Profiles**: All JAL-specific constants (PDF filename, page dimensions, regex patterns, geometry tolerances, archetype names, image filters) were extracted from Python code into `configs/profiles/jal_faucets_2025.yaml`. A second catalogue becomes a new YAML file rather than a code change.
+  2. **Pydantic Profile Model**: `src/pdfscraper/profile.py` defines a `CatalogueProfile` model that loads and validates a profile YAML, compiling regex strings into `re.Pattern` objects at load time.
+  3. **Global Module-Level Shim**: The profile is loaded once at import time in `src/pdfscraper/active_profile.py` (renamed from `catalogue_spec.py`) and re-exported as module-level constants. All existing imports were updated from `pdfscraper.catalogue_spec` to `pdfscraper.active_profile`.
+  4. **Known Constraint — One Catalogue Per Process**: The global-state architecture means a single Python process can only hold one catalogue's configuration. If the pipeline ever evolves from a CLI tool into a long-running service, API, or concurrent batch processor, the profile must be refactored to be passed explicitly through the call chain as a parameter (the way parsers already take `known_series`). This was evaluated and deliberately deferred: the CLI assumes one catalogue per invocation, and touching every parser signature introduces refactor risk with no immediate benefit.
+- **Why**: Decouples catalogue-specific values from Python code so adding a new catalogue is a YAML file, not a code change. The global shim preserves all existing signatures and keeps the refactor risk minimal — all 12 tests pass, full pipeline yields identical 1,065 products.
+- **What Was Rejected**: Passing the `CatalogueProfile` explicitly as a parameter through the entire call chain (CLI → classifier → geometry → parsers). Evaluated for testability and multi-tenancy benefits, deferred because the added signature churn introduces silent breakage risk with no current use case.

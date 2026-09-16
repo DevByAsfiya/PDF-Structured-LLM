@@ -460,5 +460,107 @@ def evaluate(
     logger.info("Evaluation completed. Accuracy metrics within target threshold (stub).")
 
 
+@app.command("load")
+def load_db() -> None:
+    """Load products.parquet and pages.parquet into catalogue.sqlite. Idempotent."""
+    configure_logging(settings.log_level)
+    from pdfscraper.db.repository import CatalogueRepository
+
+    console.print(
+        Panel.fit(
+            "[bold cyan]Loading Database[/bold cyan]\n"
+            f"Source: [yellow]{settings.processed_data_dir / 'products.parquet'}[/yellow]\n"
+            f"Target: [yellow]{settings.sqlite_db_path}[/yellow]"
+        )
+    )
+
+    repo = CatalogueRepository()
+
+    # Load pages
+    page_count = repo.load_pages_from_parquet()
+    console.print(f"[green]Pages loaded:[/green] {page_count}")
+
+    # Load products
+    product_count = repo.load_products_from_parquet()
+    variant_count = repo.get_variant_count()
+    console.print(
+        f"[green]Products loaded:[/green] {product_count}\n"
+        f"[green]Variants (SKUs):[/green] {variant_count}"
+    )
+
+    # Review queue
+    review_df = repo.get_review_queue()
+    console.print(
+        f"[yellow]Review queue:[/yellow] {len(review_df)} items "
+        f"(confidence < {settings.confidence_threshold})"
+    )
+
+    # Cross-page SKU collisions
+    collisions_df = repo.get_cross_page_sku_collisions()
+    console.print(
+        f"\n[bold]Cross-page SKU collisions:[/bold] [bold yellow]{len(collisions_df)}[/bold yellow] "
+        f"SKUs appear on more than one page"
+    )
+
+    if not collisions_df.empty:
+        collision_table = Table(
+            title="Cross-Page SKU Collisions",
+            show_header=True,
+            header_style="bold red",
+        )
+        collision_table.add_column("SKU", style="bold green", width=12)
+        collision_table.add_column("Pages", justify="right", style="cyan", width=8)
+        collision_table.add_column("Page Numbers", style="yellow")
+        collision_table.add_column("Product IDs", style="dim", max_width=50)
+
+        for _, row in collisions_df.iterrows():
+            collision_table.add_row(
+                str(row["sku"]),
+                str(row["page_count"]),
+                str(row["pages"]),
+                str(row["product_ids"]),
+            )
+
+        console.print(collision_table)
+
+    console.print(
+        f"\n[bold green]Database loaded successfully.[/bold green]\n"
+        f"  SQLite: [yellow]{settings.sqlite_db_path}[/yellow]"
+    )
+
+
+@app.command("enrich")
+def enrich(
+    step: str = typer.Option(
+        "taxonomy",
+        "--step",
+        help="Enrichment step to run: 'taxonomy' (propose taxonomy for review).",
+    ),
+) -> None:
+    """Run enrichment steps. Start with 'taxonomy' to propose categories for review."""
+    configure_logging(settings.log_level)
+
+    if step == "taxonomy":
+        from pdfscraper.enrich.categorizer import propose_taxonomy
+
+        console.print(
+            Panel.fit(
+                "[bold magenta]Step 1: Taxonomy Proposal[/bold magenta]\n"
+                "Extracting distinct product descriptions and proposing a category taxonomy.\n"
+                "[yellow]This calls the LLM (Groq).[/yellow]"
+            )
+        )
+
+        output_path = propose_taxonomy()
+
+        console.print(
+            f"\n[bold green]Taxonomy proposal written to:[/bold green] [yellow]{output_path}[/yellow]\n"
+            f"[bold]Review the file and approve before running the assignment step.[/bold]"
+        )
+    else:
+        console.print(f"[red]Unknown enrichment step: {step}[/red]")
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app()

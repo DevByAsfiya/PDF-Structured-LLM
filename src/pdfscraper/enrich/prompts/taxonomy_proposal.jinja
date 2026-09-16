@@ -1,0 +1,29 @@
+You are a plumbing product taxonomy expert. You are given a list of unique product descriptions extracted from the JAL Faucets 2025 catalogue.
+
+Your task is to propose a two-level category taxonomy (category → subcategory) that covers every product description in the list. Each product should map to exactly one category and one subcategory.
+
+Rules:
+- Categories should be broad functional groupings (e.g. "Basin Mixer", "Stop Cock", "Shower", "Kitchen Sink", "Spare Part").
+- Subcategories should distinguish form factors, mounting types, or product variants within a category (e.g. "Concealed", "Exposed", "Wall Mounted", "Tall Model").
+- Do NOT create categories based on series/brand names (those are already tracked separately).
+- Do NOT create a catch-all "Other" category — every product must have a specific category.
+- Aim for 15-30 categories. Too few groups products with nothing in common; too many defeats the purpose of filtering.
+- Each category must have at least 3 products. If a proposed category has fewer, merge it into a related one.
+
+Here are the {{ descriptions | length }} unique product descriptions:
+
+{% for desc in descriptions %}
+- {{ desc }}
+{% endfor %}
+
+Respond with a JSON object with this exact structure:
+{
+  "taxonomy": [
+    {
+      "category": "Category Name",
+      "subcategories": ["Subcategory 1", "Subcategory 2"],
+      "description": "Brief description of what products belong here",
+      "example_products": ["Example product description 1", "Example product description 2"]
+    }
+  ]
+}
